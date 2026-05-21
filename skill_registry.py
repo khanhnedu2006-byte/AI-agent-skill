@@ -11,7 +11,7 @@ class SkillRegistry:
             path = os.path.join(self.skills_dir, name, "SKILL.md")
             if not os.path.exists(path):
                 continue
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
             if content.startswith("---"):
                 parts = content.split("---", 2)
@@ -24,5 +24,5 @@ class SkillRegistry:
 
     def get_skill_content(self, name: str) -> str:
         path = os.path.join(self.skills_dir, name, "SKILL.md")
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             return f.read()
