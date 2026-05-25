@@ -1,15 +1,34 @@
-# AI-agent-skill
-AI Agent with Skill Registry — LangChain + Ollama
 # AI Agent with Skill Registry
 
-Một AI Agent đơn giản sử dụng cơ chế **Skill Registry** — thay vì load toàn bộ khả năng vào prompt, agent chỉ đọc mô tả ngắn của từng skill, dùng LLM chọn skill phù hợp, rồi mới load hướng dẫn chi tiết. Chạy hoàn toàn local, không cần API key.
+Một AI Agent chạy hoàn toàn **local** sử dụng cơ chế **Skill Registry** — thay vì load toàn bộ khả năng vào prompt, agent chỉ đọc mô tả ngắn của từng skill, dùng LLM chọn skill phù hợp, rồi mới load hướng dẫn chi tiết. Không cần API key, không tốn phí.
+
+---
+
+## Tính năng
+
+- **Skill Registry** — tự động phát hiện skills mới, không cần sửa code
+- **Lazy Loading** — chỉ đọc full content của skill được chọn, tiết kiệm token
+- **Sub-script execution** — skill có thể gọi Python script thật để tính toán chính xác 100%
+- **PDF Reader** — extract và trả lời câu hỏi về nội dung PDF
+- **General fallback** — trả lời bằng general knowledge khi không có skill phù hợp
+
+---
+
+## Skills có sẵn
+
+| Skill | Mô tả | Sub-script |
+|---|---|---|
+| `calculator` | Tính toán biểu thức số học | ✅ `calculator.py` |
+| `weather` | Trả lời thời tiết (fake data) | ❌ |
+| `pdf_reader` | Đọc và trả lời câu hỏi về PDF | ✅ `pdf_handler.py` |
 
 ---
 
 ## Yêu cầu hệ thống
 
 - Python 3.10+
-- [Ollama](https://ollama.com/download) (để chạy LLM local)
+- [Ollama](https://ollama.com/download) (Mac / Linux / Windows)
+- RAM tối thiểu 8GB
 
 ---
 
@@ -24,26 +43,23 @@ cd AI-agent-skill
 
 ### 2. Cài Ollama
 
-Tải và cài tại: https://ollama.com/download (hỗ trợ Mac, Linux, Windows)
+Tải và cài tại: https://ollama.com/download
 
-Sau khi cài, mở Ollama app để service chạy ngầm.
-
-### 3. Pull model
+Sau khi cài, mở Ollama app để service chạy ngầm, sau đó pull model:
 
 ```bash
 ollama pull llama3.2:3b
 ```
 
-> Model nặng ~2GB, chờ vài phút. Yêu cầu tối thiểu 8GB RAM.  
-> Máy yếu hơn dùng: `ollama pull llama3.2:1b`
+> Model nặng ~2GB. Máy yếu RAM < 8GB dùng: `ollama pull llama3.2:1b`
 
-Kiểm tra model đã sẵn sàng:
+Kiểm tra model sẵn sàng:
 
 ```bash
 ollama list
 ```
 
-### 4. Tạo virtual environment
+### 3. Tạo virtual environment
 
 ```bash
 python -m venv venv
@@ -59,7 +75,7 @@ source venv/bin/activate
 venv\Scripts\activate
 ```
 
-### 5. Cài dependencies
+### 4. Cài dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -73,24 +89,33 @@ pip install -r requirements.txt
 python demo.py
 ```
 
-Demo sẽ chạy 4 câu hỏi mẫu và in ra skill được chọn cùng câu trả lời:
+Output mẫu:
 
 ```
-Query: What's 15 * 23?
-Skill selected: calculator
-Answer: 15 * 23 equals 345.
+============================================================
+      AI AGENT WITH SKILL REGISTRY - DEMO
+============================================================
 
-Query: How's the weather in Hanoi today?
-Skill selected: weather
-Answer: It's currently 32°C and sunny in Hanoi.
-
-Query: Tell me a joke
-Skill selected: none
-Answer: Why don't scientists trust atoms? Because they make up everything!
-
-Query: Calculate the area of a circle with radius 5
-Skill selected: calculator
-Answer: The area of a circle with radius 5 is approximately 78.54.
+Query    : What's 15 * 23?
+Skill    : calculator
+Answer   : 15 * 23 equals 345.
+------------------------------------------------------------
+Query    : What is (2**10 + 3**5 - 150) / (7 * 4 - 18)?
+Skill    : calculator
+Answer   : The result is 111.7.
+------------------------------------------------------------
+Query    : How's the weather in Hanoi today?
+Skill    : weather
+Answer   : It's currently 32°C and sunny in Hanoi. Stay hydrated!
+------------------------------------------------------------
+Query    : Tell me a joke
+Skill    : none (general knowledge)
+Answer   : Why don't scientists trust atoms? Because they make up everything!
+------------------------------------------------------------
+Query    : Calculate the area of a circle with radius 5
+Skill    : calculator
+Answer   : The area of a circle with radius 5 is approximately 78.54.
+------------------------------------------------------------
 ```
 
 ---
@@ -101,16 +126,20 @@ Answer: The area of a circle with radius 5 is approximately 78.54.
 AI-agent-skill/
 ├── skills/
 │   ├── calculator/
-│   │   └── SKILL.md       # Skill tính toán số học
-│   └── weather/
-│       └── SKILL.md       # Skill trả lời thời tiết
+│   │   ├── SKILL.md          # Hướng dẫn LLM tính toán
+│   │   └── calculator.py     # Script tính toán chính xác (safe eval)
+│   ├── weather/
+│   │   └── SKILL.md          # Hướng dẫn trả lời thời tiết
+│   └── pdf_reader/
+│       └── SKILL.md          # Hướng dẫn đọc và trả lời về PDF
 ├── tests/
 │   ├── __init__.py
-│   └── test_registry.py   # Unit tests
-├── skill_registry.py      # Quản lý và load skills
-├── skill_selector.py      # Dùng LLM chọn skill phù hợp
-├── agent.py               # Kết nối tất cả, xử lý query
-├── demo.py                # Chạy các câu hỏi mẫu
+│   └── test_registry.py      # 7 unit tests
+├── skill_registry.py         # Quản lý và load skills
+├── skill_selector.py         # Dùng LLM chọn skill phù hợp
+├── agent.py                  # Kết nối tất cả, xử lý query
+├── pdf_handler.py            # Extract text từ PDF (pymupdf)
+├── demo.py                   # Chạy các query mẫu
 ├── requirements.txt
 └── README.md
 ```
@@ -123,6 +152,20 @@ AI-agent-skill/
 pytest tests/ -v
 ```
 
+Kết quả mong đợi:
+
+```
+tests/test_registry.py::test_list_skills_returns_list              PASSED
+tests/test_registry.py::test_list_skills_correct_count             PASSED
+tests/test_registry.py::test_list_skills_has_name_and_description  PASSED
+tests/test_registry.py::test_list_skills_correct_values            PASSED
+tests/test_registry.py::test_get_skill_content_returns_string      PASSED
+tests/test_registry.py::test_get_skill_content_has_frontmatter     PASSED
+tests/test_registry.py::test_get_skill_content_not_found           PASSED
+
+7 passed in 0.12s
+```
+
 ---
 
 ## Cách hoạt động
@@ -130,13 +173,23 @@ pytest tests/ -v
 ```
 User query
     ↓
-SkillRegistry.list_skills()     # Đọc mô tả ngắn tất cả skills
+SkillRegistry.list_skills()       # Đọc mô tả ngắn tất cả skills (lazy load)
     ↓
-SkillSelector.select()          # LLM chọn skill phù hợp (hoặc none)
+SkillSelector.select()            # LLM chọn skill phù hợp (hoặc none)
     ↓
-SkillRegistry.get_skill_content()   # Load hướng dẫn chi tiết của skill được chọn
+  ┌─────────────────────────────────────┐
+  │ Có skill                            │ Không có skill
+  ↓                                     ↓
+_run_subscript()                   General knowledge
+  ↓
+  ┌──────────────────────────────┐
+  │ Có sub-script (.py)          │ Không có sub-script
+  ↓                              ↓
+Python chạy code thật       LLM tự xử lý
+(chính xác 100%)            dựa trên SKILL.md
+  └──────────────────────────────┘
     ↓
-Agent trả lời dựa trên hướng dẫn đó
+Agent trả lời user
 ```
 
 ---
@@ -149,7 +202,7 @@ Agent trả lời dựa trên hướng dẫn đó
 mkdir skills/ten-skill-moi
 ```
 
-2. Tạo file `skills/ten-skill-moi/SKILL.md` theo format:
+2. Tạo `skills/ten-skill-moi/SKILL.md` theo format:
 
 ```markdown
 ---
@@ -167,7 +220,16 @@ Hướng dẫn chi tiết cho LLM:
 - User: "..." → "..."
 ```
 
-Agent sẽ tự động nhận diện skill mới mà không cần sửa code.
+3. (Tuỳ chọn) Thêm sub-script `skills/ten-skill-moi/ten-skill-moi.py` nếu cần chạy code thật.
+
+Agent tự động nhận diện skill mới, **không cần sửa code**.
+
+---
+
+## Bonus đã implement
+
+- ✅ **Sub-script execution** — `calculator` dùng `safe_eval()` thay vì để LLM tự tính, đảm bảo chính xác với phép tính phức tạp
+- ✅ **PDF Reader** — dùng `pymupdf` extract text giữ nguyên cấu trúc trang
 
 ---
 
@@ -176,7 +238,8 @@ Agent sẽ tự động nhận diện skill mới mà không cần sửa code.
 | Thành phần | Công nghệ |
 |---|---|
 | LLM runtime | [Ollama](https://ollama.com) |
-| Model mặc định | `llama3.2:3b` |
+| Model | `llama3.2:3b` |
 | LLM framework | LangChain + langchain-ollama |
 | YAML parsing | PyYAML |
+| PDF extraction | PyMuPDF (fitz) |
 | Testing | pytest |
